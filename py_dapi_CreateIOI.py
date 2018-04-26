@@ -3,7 +3,6 @@
 import sys
 import blpapi
 import datetime
-import time
 
 SESSION_STARTED                 = blpapi.Name("SessionStarted")
 SESSION_STARTUP_FAILURE         = blpapi.Name("SessionStartupFailure")
@@ -30,8 +29,62 @@ class SessionEventHandler():
         ioi = request.getElement("ioi")
 
         # Set the good-until time of this option to 15 minutes from now
-        ioi.setElement("goodUntil", datetime.datetime.utcnow() + datetime.timedelta(0,900))
+        ioi.setElement("goodUntil", datetime.datetime.utcnow() + datetime.timedelta(0,60))
 
+        # Create the equity
+        stock = ioi.getElement("instrument").setChoice("stock")
+        ticker = stock.getElement("security").setChoice("ticker")
+        ticker.setValue("VOD LN Equity")
+
+        # This option has two legs. Create the first leg
+        #leg1 = option.getElement("legs").appendElement()
+        #leg1.setElement("type","Call")
+        #leg1.setElement("strike", 230)
+        #leg1.setElement("expiry", datetime.datetime(2017,12,15,12))
+        #leg1.setElement("style", "European")
+        #leg1.setElement("ratio", +1.00)
+        #leg1.setElement("exchange", "LN")
+        #leg1.getElement("underlying").setChoice("ticker")
+        #leg1.getElement("underlying").setElement("ticker", "VOD LN Equity")
+
+        # Create the second leg
+        #leg2 = option.getElement("legs").appendElement()
+        #leg1.setElement("type","Call")
+        #leg2.setElement("strike", 240)
+        #leg2.setElement("expiry", datetime.datetime(2017,12,15,12))
+        #leg2.setElement("style", "European")
+        #leg2.setElement("ratio", -1.25)
+        #leg2.setElement("exchange", "LN")
+        #leg2.getElement("underlying").setChoice("ticker")
+        #leg2.getElement("underlying").setElement("ticker", "VOD LN Equity")
+
+        # Create a quote consisting of a bid and an offer
+        bid = ioi.getElement("bid")
+        bid.getElement("price").setChoice("fixed")
+        bid.getElement("price").getElement("fixed").getElement("price").setValue(83.63)
+        bid.getElement("size").getElement("quantity").setValue(1000)
+        bid.getElement("referencePrice").setElement("price", 202.15)
+        bid.getElement("referencePrice").setElement("currency", "GBp")
+        bid.setElement("notes", "bid notes")
+
+        # Set the offer
+        offer = ioi.getElement("offer")
+        offer.getElement("price").setChoice("fixed")
+        offer.getElement("price").getElement("fixed").getElement("price").setValue(83.64)
+        offer.getElement("size").setChoice("quantity")
+        offer.getElement("size").getElement("quantity").setValue(2000)
+        offer.getElement("referencePrice").setElement("price", 202.15)
+        offer.getElement("referencePrice").setElement("currency", "GBp")
+        offer.setElement("notes", "offer notes")
+
+        # Set targets
+        includes = ioi.getElement("targets").getElement("includes")
+        for acronym in ["BLPA", "BLPB"]:
+            target = includes.appendElement()
+            target.setChoice("acronym")
+            target.setElement("acronym", acronym)
+                    
+        
         # Create the option
         option = ioi.getElement("instrument").setChoice("option")
         option.setElement("structure", "CallSpread")
@@ -83,7 +136,11 @@ class SessionEventHandler():
             target = includes.appendElement()
             target.setChoice("acronym")
             target.setElement("acronym", acronym)
-                    
+
+        
+        
+        
+        
         
         print("Sending Request: %s" % request.toString())
 
